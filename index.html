@@ -95,12 +95,21 @@
             const basePath = isLocal ? './lib/' : '';
             const cdnBase = 'https://';
 
-            function loadScript(src, onErrorMessage) {
+            function loadScript(src, onErrorMessage, fallbackSrc = null) {
                 return new Promise((resolve, reject) => {
                     const script = document.createElement('script');
                     script.src = src;
                     script.onload = () => { console.log(`Loaded: ${src}`); resolve(); };
-                    script.onerror = () => { console.error(`Failed to load: ${src}`); reject(new Error(onErrorMessage)); };
+                    script.onerror = () => {
+                        console.error(`Failed to load: ${src}`);
+                        if (fallbackSrc) {
+                            console.log(`Trying fallback: ${fallbackSrc}`);
+                            script.src = fallbackSrc;
+                            script.onerror = () => reject(new Error(`${onErrorMessage} and fallback failed`));
+                        } else {
+                            reject(new Error(onErrorMessage));
+                        }
+                    };
                     document.body.appendChild(script);
                 });
             }
@@ -113,14 +122,21 @@
             let ffmpeg;
 
             Promise.all([
-                loadScript(isLocal ? `${basePath}ffmpeg.min.js` : `${cdnBase}unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/ffmpeg.min.js`, 'Failed to load FFmpeg'),
-                loadScript(isLocal ? `${basePath}pdf.min.js` : `${cdnBase}cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js`, 'Failed to load PDF.js')
+                loadScript(
+                    isLocal ? `${basePath}ffmpeg.min.js` : `${cdnBase}unpkg.com/@ffmpeg/ffmpeg@latest/dist/ffmpeg.min.js`,
+                    'Failed to load FFmpeg',
+                    `${cdnBase}cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@latest/dist/ffmpeg.min.js`
+                ),
+                loadScript(
+                    isLocal ? `${basePath}pdf.min.js` : `${cdnBase}cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js`,
+                    'Failed to load PDF.js'
+                )
             ]).then(() => {
                 console.log('All scripts loaded successfully');
                 const { createFFmpeg, fetchFile } = FFmpeg;
                 ffmpeg = createFFmpeg({ 
                     log: true,
-                    corePath: isLocal ? `${basePath}ffmpeg-core.js` : `${cdnBase}unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js`,
+                    corePath: isLocal ? `${basePath}ffmpeg-core.js` : `${cdnBase}unpkg.com/@ffmpeg/core@latest/dist/ffmpeg-core.js`,
                     worker: false,
                     wasm: true,
                     args: ['-threads', '1'] // Force single-threaded
@@ -675,5 +691,6 @@
             }
         })();
     </script>
+    <!-- Removed Cloudflare script since it’s not critical to core functionality and might be added by hosting -->
 </body>
 </html>
