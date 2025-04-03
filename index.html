@@ -113,16 +113,17 @@
             let ffmpeg;
 
             Promise.all([
-                loadScript(isLocal ? `${basePath}ffmpeg.min.js` : `${cdnBase}unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js`, 'Failed to load FFmpeg'),
+                loadScript(isLocal ? `${basePath}ffmpeg.min.js` : `${cdnBase}unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/ffmpeg.min.js`, 'Failed to load FFmpeg'),
                 loadScript(isLocal ? `${basePath}pdf.min.js` : `${cdnBase}cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js`, 'Failed to load PDF.js')
             ]).then(() => {
                 console.log('All scripts loaded successfully');
                 const { createFFmpeg, fetchFile } = FFmpeg;
                 ffmpeg = createFFmpeg({ 
                     log: true,
-                    corePath: isLocal ? `${basePath}ffmpeg-core.js` : `${cdnBase}unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js`,
-                    worker: false, // Disable threading to avoid SharedArrayBuffer
-                    wasm: true
+                    corePath: isLocal ? `${basePath}ffmpeg-core.js` : `${cdnBase}unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js`,
+                    worker: false,
+                    wasm: true,
+                    args: ['-threads', '1'] // Force single-threaded
                 });
                 pdfjsLib.GlobalWorkerOptions.workerSrc = isLocal ? `${basePath}pdf.worker.min.js` : `${cdnBase}cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js`;
                 initializeApp();
